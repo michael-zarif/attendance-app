@@ -399,7 +399,7 @@ class AttendanceApp {
         
         // Check if configuration is available
         if (!githubToken || !repoOwner || !repoName) {
-            this.updateStatus('❌ GitHub configuration required to download CSV', 'error');
+            this.updateStatus('❌ GitHub token required to download Excel file', 'error');
             this.showModal();
             return;
         }
@@ -407,7 +407,7 @@ class AttendanceApp {
         try {
             // Disable button and show loading
             this.downloadCsvBtn.disabled = true;
-            this.downloadCsvBtn.textContent = '⏳ Downloading...';
+            this.downloadCsvBtn.textContent = '⏳ Generating Excel...';
             
             // Fetch CSV file from GitHub repository
             const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/attendance.csv`, {
@@ -436,28 +436,53 @@ class AttendanceApp {
             }
             const csvContent = new TextDecoder('utf-8').decode(bytes);
             
-            // Create download link with proper UTF-8 BOM for Excel compatibility
-            const bom = '\uFEFF'; // UTF-8 BOM
-            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
+            // Parse CSV content into array of arrays
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            const worksheetData = lines.map(line => {
+                // Simple CSV parsing - handle quoted fields
+                const fields = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        fields.push(current.replace(/^"|"$/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                fields.push(current.replace(/^"|"$/g, ''));
+                return fields;
+            });
+            
+            // Create Excel workbook
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // Set column widths for better display
+            worksheet['!cols'] = [
+                { wch: 20 }, // Timestamp
+                { wch: 15 }, // Mobile Number
+                { wch: 30 }, // Full Name
+                { wch: 20 }  // Service
+            ];
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
             
             // Generate filename with current date
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-            const filename = `attendance-${dateStr}.csv`;
+            const filename = `attendance-${dateStr}.xlsx`;
             
-            link.href = url;
-            link.download = filename;
-            link.style.display = 'none';
+            // Download Excel file
+            XLSX.writeFile(workbook, filename);
             
-            // Trigger download
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-            
-            this.updateStatus(`✅ CSV downloaded successfully: ${filename}`, 'success');
+            this.updateStatus(`✅ Excel file downloaded successfully: ${filename}`, 'success');
             
         } catch (error) {
             console.error('Error downloading CSV:', error);
@@ -465,7 +490,7 @@ class AttendanceApp {
         } finally {
             // Re-enable button
             this.downloadCsvBtn.disabled = false;
-            this.downloadCsvBtn.textContent = '📊 Download CSV';
+            this.downloadCsvBtn.textContent = '📊 Download Excel';
         }
     }
 }
