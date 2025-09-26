@@ -25,10 +25,10 @@ class AttendanceApp {
         this.loadRecentScans();
         
         // Auto-start if config is available
-        if (this.config.apiKey && this.config.spreadsheetId) {
+        if (this.config.githubToken && this.config.repoOwner && this.config.repoName) {
             this.updateStatus('Configuration loaded. Ready to scan!', 'success');
         } else {
-            this.updateStatus('Please configure Google Sheets settings', 'error');
+            this.updateStatus('Please configure GitHub settings', 'error');
             this.showModal();
         }
     }

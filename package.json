@@ -1,7 +1,7 @@
 {
   "name": "qr-attendance-app",
-  "version": "1.0.0",
-  "description": "Simple QR code attendance tracking web app",
+  "version": "2.0.0",
+  "description": "QR code attendance tracking web app with GitHub Actions backend",
   "main": "index.html",
   "scripts": {
     "start": "python -m http.server 8080",
@@ -13,13 +13,22 @@
     "qr-code",
     "mobile",
     "pwa",
-    "google-sheets"
+    "github-actions",
+    "github-api",
+    "attendance-tracking",
+    "camera-scanner"
   ],
   "author": "Your Name",
   "license": "MIT",
-  "homepage": ".",
+  "homepage": "https://github.com/YOUR-USERNAME/qr-attendance-app",
   "repository": {
     "type": "git",
-    "url": "."
+    "url": "https://github.com/YOUR-USERNAME/qr-attendance-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YOUR-USERNAME/qr-attendance-app/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

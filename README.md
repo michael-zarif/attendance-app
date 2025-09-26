@@ -1,74 +1,84 @@
 # QR Attendance App
 
-A simple, mobile-friendly web application for tracking attendance using QR code scanning. The app integrates directly with Google Sheets to store attendance records with timestamps.
+A simple, mobile-friendly web application for tracking attendance using QR code scanning. The app uses GitHub Actions as a backend to store attendance records as GitHub Issues and CSV files.
 
 ## Features
 
 - 📱 **Mobile-First Design**: Optimized for mobile browsers
 - 📷 **Camera Access**: Uses device camera for QR code scanning
 - ⚡ **Real-time Scanning**: Instant QR code detection and processing
-- 📊 **Google Sheets Integration**: Direct data recording to spreadsheets
+- 🔧 **GitHub Integration**: Reliable backend using GitHub Actions
 - 💾 **Offline Support**: PWA capabilities with offline caching
 - 🔄 **Auto-retry**: Automatically retries failed submissions
 - 📋 **Recent Scans**: View recent attendance records
-- ⚙️ **Easy Configuration**: Simple setup process
+- ⚙️ **Easy Configuration**: Simple three-field setup
+- 📊 **Dual Storage**: Data stored as GitHub Issues + CSV file
+- 🔒 **Secure**: No external servers, uses GitHub's infrastructure
 
-## Setup Instructions
+## Quick Start
 
-### 1. Google Sheets Setup
+### 1. Deploy to GitHub Pages
 
-1. Create a new Google Sheet or use an existing one
-2. Note the **Spreadsheet ID** from the URL:
-   ```
-   https://docs.google.com/spreadsheets/d/[SPREADSHEET_ID]/edit
-   ```
-3. Make sure the sheet has appropriate column headers (optional):
-   - Column A: Timestamp
-   - Column B: QR Code Data
-   - Column C: ISO Timestamp
-   - Column D: Source
+1. **Fork or clone** this repository
+2. **Enable GitHub Pages**: Settings → Pages → Deploy from main branch
+3. **Your app URL**: `https://YOUR-USERNAME.github.io/qr-attendance-app`
 
-### 2. Google Sheets API Setup
+### 2. Create GitHub Personal Access Token
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the **Google Sheets API**
-4. Create credentials:
-   - Go to **APIs & Services > Credentials**
-   - Click **+ CREATE CREDENTIALS > API Key**
-   - Copy the API key
-5. Configure API key restrictions (recommended):
-   - Set application restrictions to "HTTP referrers"
-   - Add your website domain
-   - Set API restrictions to "Google Sheets API"
+1. **Go to**: [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
+2. **Click**: "Generate new token (classic)"
+3. **Select scopes**:
+   - ✅ `repo` (Full control of repositories)
+   - ✅ `workflow` (Update GitHub Action workflows)
+4. **Copy the token** (starts with `ghp_...`)
 
-### 3. App Configuration
+### 3. Configure Repository Permissions
 
-1. Open the app in a mobile browser
-2. Click the settings (⚙️) button
-3. Enter:
-   - **Spreadsheet ID**: From step 1
-   - **Sheet Name**: The specific sheet tab name (default: "Sheet1")
-   - **API Key**: From step 2
-4. Click "Save Configuration"
+1. **Go to your repository**: Settings → Actions → General
+2. **Workflow permissions**: Select "Read and write permissions"
+3. **Check**: "Allow GitHub Actions to create and approve pull requests"
+4. **Click "Save"**
 
-### 4. Using the App
+### 4. Configure the App
 
-1. Tap "Start Camera" to begin scanning
-2. Point the camera at a QR code
-3. The app will automatically:
-   - Detect the QR code
-   - Record the timestamp
-   - Send data to Google Sheets
-   - Show confirmation
+1. **Open your deployed app** on mobile/desktop
+2. **Click Settings** ⚙️
+3. **Enter**:
+   - **GitHub Token**: Your personal access token
+   - **Repository Owner**: Your GitHub username
+   - **Repository Name**: Your repository name (e.g., `qr-attendance-app`)
+4. **Click "Save Configuration"**
 
-## QR Code Format
+### 5. Start Using
 
-The app accepts any QR code content. Common formats include:
-- Student IDs
-- Employee codes  
-- Event tickets
-- Custom identifiers
+1. **Tap "Start Camera"** to begin scanning
+2. **Point camera at QR code**
+3. **Automatic process**:
+   - Detects QR code
+   - Records timestamp
+   - Creates GitHub Issue
+   - Updates CSV file
+   - Shows confirmation
+
+## Data Storage
+
+### GitHub Issues
+Each scan creates a GitHub Issue with:
+- **Title**: `Attendance: [QR-Data] - [Timestamp]`
+- **Labels**: `attendance`, `automated`
+- **Body**: Detailed scan information
+
+### CSV File
+All records are also stored in `attendance.csv`:
+```csv
+"Timestamp","QR Code Data","ISO Timestamp","Source"
+"1/1/2024, 10:30:00 AM","student-123","2024-01-01T10:30:00.000Z","mobile-app"
+```
+
+### Data Export
+- **Download CSV**: Go to repository → `attendance.csv` → Download
+- **Browse Records**: Repository → Issues tab → Filter by `attendance` label
+- **Audit Trail**: Actions tab shows all processing history
 
 ## Mobile Installation
 
@@ -84,15 +94,15 @@ The app accepts any QR code content. Common formats include:
 
 ## Security Features
 
-- API keys are stored locally on the device
-- HTTPS required for camera access
-- No data stored on external servers
-- Direct connection to Google Sheets
+- GitHub token stored locally on device only
+- HTTPS required for camera access  
+- No external servers - uses GitHub's infrastructure
+- Full audit trail in repository
 
 ## Offline Support
 
 - App works offline after first load
-- Failed submissions are automatically retried when connection returns
+- Failed submissions automatically retried when online
 - Recent scans cached locally
 
 ## Browser Compatibility
@@ -109,11 +119,11 @@ The app accepts any QR code content. Common formats include:
 - Check browser permissions for camera access
 - Try reloading the page
 
-### Google Sheets Not Updating
-- Verify API key is correct and has proper permissions
-- Check spreadsheet ID is accurate
-- Ensure spreadsheet is accessible with the API key
-- Check browser console for error messages
+### GitHub Issues Not Created
+- Check repository Actions tab for workflow errors
+- Verify token has `repo` and `workflow` permissions
+- Ensure repository has "Read and write permissions" in Actions settings
+- Check browser console for API error messages
 
 ### QR Codes Not Scanning
 - Ensure good lighting conditions
@@ -124,40 +134,47 @@ The app accepts any QR code content. Common formats include:
 ## File Structure
 
 ```
-attendance-app/
-├── index.html          # Main application page
-├── styles.css          # Mobile-responsive styling
-├── script.js           # Core functionality
-├── manifest.json       # PWA configuration
-├── sw.js              # Service worker for offline support
-└── README.md          # This file
+qr-attendance-app/
+├── .github/workflows/
+│   └── attendance.yml      # GitHub Actions workflow
+├── index.html              # Main application page
+├── styles.css              # Mobile-responsive styling
+├── script.js               # Core functionality
+├── manifest.json           # PWA configuration
+├── sw.js                   # Service worker for offline support
+├── README.md               # This file
+├── GITHUB-SETUP.md         # Detailed setup guide
+└── attendance.csv          # Generated attendance data
 ```
+
+## Architecture
+
+```
+📱 Mobile App → 🌐 GitHub API → ⚙️ GitHub Actions → 📊 Issues + CSV
+```
+
+1. **Mobile app** captures QR codes via camera
+2. **GitHub API** receives attendance data 
+3. **GitHub Actions** processes the data automatically
+4. **Storage** in GitHub Issues (individual records) + CSV file (bulk export)
 
 ## Development
 
 To modify or extend the app:
 
-1. Clone or download the files
-2. Open in any web server (Python: `python -m http.server`)
-3. Access via `localhost` with HTTPS for camera access
-4. Edit files as needed
+1. **Fork this repository**
+2. **Enable GitHub Pages** for testing
+3. **Edit files** as needed
+4. **Test locally**: `python -m http.server` (requires HTTPS for camera)
 
-## Deployment Options
+## Why GitHub Actions?
 
-### Option 1: GitHub Pages
-1. Push code to GitHub repository
-2. Enable GitHub Pages in repository settings
-3. Access via `https://username.github.io/repository-name`
-
-### Option 2: Netlify
-1. Drag and drop folder to [Netlify](https://netlify.com)
-2. Get instant deployment with HTTPS
-
-### Option 3: Any Static Host
-- Vercel
-- Firebase Hosting  
-- AWS S3 + CloudFront
-- Any web server with HTTPS support
+- ✅ **No API key hassles** (unlike Google Sheets)
+- ✅ **Built-in authentication** via GitHub tokens
+- ✅ **Free tier generous** (2000 minutes/month)
+- ✅ **Reliable infrastructure** (99.9% uptime)
+- ✅ **Full audit trail** in Actions tab
+- ✅ **Version controlled data** (CSV file in git history)
 
 ## License
 
@@ -166,6 +183,7 @@ This project is open source and available under the MIT License.
 ## Support
 
 For issues or questions:
-1. Check the troubleshooting section
-2. Review browser console for error messages
-3. Verify Google Sheets API configuration
+1. Check the [troubleshooting section](#troubleshooting)
+2. Review browser console for error messages  
+3. Check GitHub Actions tab for workflow errors
+4. Verify repository permissions and token scopes

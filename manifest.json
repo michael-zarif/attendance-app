@@ -1,7 +1,7 @@
 {
-  "name": "QR Attendance App",
-  "short_name": "Attendance",
-  "description": "Simple QR code attendance tracking app",
+  "name": "QR Attendance Tracker",
+  "short_name": "QR Attendance",
+  "description": "QR code attendance tracking with GitHub backend",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
@@ -19,12 +19,19 @@
     }
   ],
   "orientation": "portrait",
-  "categories": ["business", "productivity"],
+  "categories": ["business", "productivity", "utilities"],
   "screenshots": [
     {
       "src": "screenshot.png",
       "sizes": "540x720",
       "type": "image/png"
     }
+  ],
+  "scope": "/",
+  "lang": "en-US",
+  "features": [
+    "qr-scanner",
+    "github-integration",
+    "offline-support"
   ]
 }
