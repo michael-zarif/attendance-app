@@ -61,6 +61,9 @@ jobs:
           console.log('Parsed data:', { fullName, mobileNumber, service });
           
           try {
+            // Add a small delay to avoid race conditions
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             // Try to get existing attendance.csv
             let content = '';
             let fileSha = undefined;
@@ -73,6 +76,7 @@ jobs:
               });
               content = Buffer.from(file.data.content, 'base64').toString();
               fileSha = file.data.sha;
+              console.log(`📄 Found existing CSV file with SHA: ${fileSha}`);
             } catch (e) {
               // File doesn't exist, create header
               console.log('attendance.csv not found, creating new file');
@@ -111,56 +115,53 @@ jobs:
               const lines = content.split('\n').filter(line => line.trim());
               console.log(`🔍 Checking for duplicates of mobile: "${mobileNumber}"`);
               console.log(`📋 CSV has ${lines.length} lines to check`);
+              console.log(`📄 Current CSV content:`, content.substring(0, 500));
               
               const duplicateFound = lines.some((line, index) => {
-                // Skip header line
-                if (line.includes('Timestamp') || line.includes('Mobile Number')) {
+                // Skip header line - check for both quoted and unquoted headers
+                if (line.includes('Timestamp') || line.includes('Mobile Number') || index === 0) {
                   console.log(`⏭️ Skipping header line ${index}: ${line.substring(0, 50)}`);
                   return false;
                 }
                 
-                // Parse CSV line properly - split by comma but respect quotes
-                const fields = [];
-                let current = '';
-                let inQuotes = false;
+                console.log(`🔍 Processing line ${index}: ${line}`);
                 
-                for (let i = 0; i < line.length; i++) {
-                  const char = line[i];
-                  if (char === '"') {
-                    inQuotes = !inQuotes;
-                  } else if (char === ',' && !inQuotes) {
-                    fields.push(current);
-                    current = '';
-                  } else {
-                    current += char;
-                  }
-                }
-                fields.push(current); // Add last field
+                // Proper CSV parsing - the timestamp has a comma in it!
+                // Format: "9/27/2025, 1:53:05 AM","01274539819","Name","Service"
+                const parts = line.split(',');
+                console.log(`📝 Split parts (${parts.length}):`, parts.map(p => `"${p}"`));
                 
-                if (fields.length < 4) {
-                  console.log(`⏭️ Skipping malformed line ${index}: ${line}`);
+                if (parts.length < 5) {  // Should be 5 parts due to comma in timestamp
+                  console.log(`⏭️ Skipping malformed line ${index}: only ${parts.length} parts`);
                   return false;
                 }
                 
-                // Fields: [timestamp, mobile, name, service]
-                const [timestamp, mobile, name, service] = fields;
-                const cleanMobile = mobile.replace(/"/g, '').trim();
-                const cleanTimestamp = timestamp.replace(/"/g, '').trim();
+                // Mobile number is in parts[2] because timestamp contains a comma
+                const csvMobile = parts[2].replace(/"/g, '').trim();
+                console.log(`🔍 Comparing mobiles: CSV="${csvMobile}" vs New="${mobileNumber}"`);
                 
-                console.log(`🔍 Line ${index}: Mobile="${cleanMobile}" vs "${mobileNumber}"`);
-                
-                if (cleanMobile === mobileNumber) {
-                  // Check if it's the same day
-                  const entryDateObj = new Date(cleanTimestamp);
-                  const todayObj = new Date();
-                  const entryDay = entryDateObj.toDateString();
-                  const todayDay = todayObj.toDateString();
+                if (csvMobile === mobileNumber) {
+                  // Reconstruct timestamp from parts[0] and parts[1]
+                  const csvTimestamp = (parts[0] + ',' + parts[1]).replace(/"/g, '').trim();
+                  console.log(`📅 Found matching mobile! Checking dates...`);
+                  console.log(`🕒 Reconstructed timestamp: "${csvTimestamp}"`);
                   
-                  console.log(`📅 Date check: Entry="${entryDay}" vs Today="${todayDay}"`);
-                  
-                  if (entryDay === todayDay) {
-                    console.log(`⚠️ DUPLICATE FOUND! ${cleanMobile} already recorded today at ${cleanTimestamp}`);
-                    return true;
+                  try {
+                    const entryDate = new Date(csvTimestamp);
+                    const today = new Date();
+                    const entryDay = entryDate.toDateString();
+                    const todayDay = today.toDateString();
+                    
+                    console.log(`📅 Date comparison: Entry="${entryDay}" vs Today="${todayDay}"`);
+                    
+                    if (entryDay === todayDay) {
+                      console.log(`🚨 DUPLICATE DETECTED! Mobile ${csvMobile} already recorded today at ${csvTimestamp}`);
+                      return true;
+                    } else {
+                      console.log(`✅ Different day - allowing entry`);
+                    }
+                  } catch (dateError) {
+                    console.log(`⚠️ Date parsing error: ${dateError.message}`);
                   }
                 }
                 
