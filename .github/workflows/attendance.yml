@@ -79,14 +79,42 @@ jobs:
               content = '"Timestamp","Mobile Number","Full Name","Service"\n';
             }
             
-            // Check for duplicate attendance on the same day
-            const today = new Date().toLocaleDateString('en-US'); // Get today's date
-            const todayArabic = new Date().toLocaleDateString('ar-EG'); // Arabic date format
+            // Validate required data before processing
+            if (!mobileNumber || !fullName || !service) {
+              console.log(`❌ Invalid QR data - missing required fields:`);
+              console.log(`Mobile: "${mobileNumber}", Name: "${fullName}", Service: "${service}"`);
+              
+              // Create issue for invalid data attempt
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `❌ Invalid QR Data Attempt - ${displayTime}`,
+                body: `
+                ## ❌ Invalid QR Data Detected
+                
+                - **📱 Mobile**: "${mobileNumber}"
+                - **👤 Name**: "${fullName}"
+                - **⛪ Service**: "${service}"
+                - **🕒 Attempt Time**: ${displayTime}
+                - **❌ Status**: **REJECTED - Missing required data**
+                
+                **Raw QR Data**: \`${qrData}\`
+                `,
+                labels: ['attendance', 'invalid', 'rejected']
+              });
+              
+              return; // Exit without updating CSV
+            }
             
+            // Check for duplicate attendance on the same day
             if (content && mobileNumber) {
               const lines = content.split('\n').filter(line => line.trim());
               const duplicateFound = lines.some(line => {
-                if (!line.includes(mobileNumber)) return false;
+                // Skip header line
+                if (line.includes('Timestamp') && line.includes('Mobile Number')) return false;
+                
+                // Check if mobile number exists in this line
+                if (!line.includes(`"${mobileNumber}"`)) return false;
                 
                 // Extract date from the line (first field)
                 const match = line.match(/^"([^"]+)"/);
@@ -95,8 +123,12 @@ jobs:
                   const entryDateObj = new Date(entryDate);
                   const todayObj = new Date();
                   
-                  // Check if it's the same day
-                  return entryDateObj.toDateString() === todayObj.toDateString();
+                  // Check if it's the same day (compare date strings for accuracy)
+                  const entryDay = entryDateObj.toDateString();
+                  const todayDay = todayObj.toDateString();
+                  
+                  console.log(`Comparing dates: Entry="${entryDay}" vs Today="${todayDay}"`);
+                  return entryDay === todayDay;
                 }
                 return false;
               });

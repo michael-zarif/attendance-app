@@ -151,16 +151,21 @@ class AttendanceApp {
                 this.canvas.height = this.video.videoHeight;
             }
             
-            this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             
             // Check if jsQR is available
             if (typeof jsQR !== 'undefined') {
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
                 if (code && !this.scanCooldown) {
-                    console.log('🎯 QR Code detected:', code.data);
-                    this.processQRCode(code.data);
+                    console.log('QR Code detected:', code.data);
+                    
+                    // Validate QR code before processing
+                    if (this.isValidAttendanceQR(code.data)) {
+                        this.processQRCode(code.data);
+                    } else {
+                        console.log('❌ Invalid QR code - missing required attendance data');
+                        this.updateStatus('❌ Invalid QR - Not an attendance QR code', 'error');
+                    }
                 }
             } else {
                 console.error('❌ jsQR library not loaded');
@@ -173,6 +178,31 @@ class AttendanceApp {
         if (this.isScanning) {
             requestAnimationFrame(() => this.scan());
         }
+    }
+    
+    isValidAttendanceQR(qrData) {
+        if (!qrData || typeof qrData !== 'string') return false;
+        
+        // Check if QR contains required Arabic fields
+        const hasService = /الخدمة["":]/.test(qrData);
+        const hasName = /الاسم رباعي["":]/.test(qrData) || /الاسم["":]/.test(qrData);
+        const hasMobile = /رقم الموبايل["":]/.test(qrData);
+        
+        // Also check that there's actual data after the field names
+        const { extractedData } = this.parseQRData(qrData);
+        const hasValidData = extractedData.mobileNumber && 
+                            extractedData.fullName && 
+                            extractedData.service;
+        
+        console.log('QR validation:', {
+            hasService,
+            hasName,
+            hasMobile,
+            hasValidData,
+            extractedData
+        });
+        
+        return hasService && hasName && hasMobile && hasValidData;
     }
     
     async processQRCode(qrData) {
@@ -254,19 +284,11 @@ class AttendanceApp {
             });
             
             if (response.ok) {
-                // Check for duplicates by looking at recent scans
-                const { extractedData } = this.parseQRData(scanRecord.qrData);
-                const isDuplicate = this.checkForDuplicateToday(extractedData.mobileNumber);
-                
-                if (isDuplicate) {
-                    this.updateStatus(`Already recorded today: ${extractedData.fullName}`, 'warning');
-                    scanRecord.status = 'duplicate';
-                    scanRecord.isDuplicate = true;
-                } else {
-                    this.updateStatus(`Attendance recorded successfully!`, 'success');
-                    scanRecord.status = 'submitted';
-                    scanRecord.submitted = true;
-                }
+                // Server will handle all validation and duplicate detection
+                // We'll get the final result from the GitHub Actions workflow
+                this.updateStatus('✅ Attendance submitted - processing...', 'success');
+                scanRecord.status = 'submitted';
+                scanRecord.submitted = true;
                 
                 this.showLastScan(scanRecord);
                 this.addToRecentScans(scanRecord);
