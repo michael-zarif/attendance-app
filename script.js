@@ -178,9 +178,12 @@ class AttendanceApp {
                         this.processQRCode(code.data);
                     } else {
                         console.log('⚠️ QR detected but not valid attendance format');
-                        this.updateStatus('⚠️ QR detected - but not attendance format', 'warning');
+                        this.updateStatus('⚠️ QR detected - Not an attendance QR code', 'warning');
                         // Still show what was detected for debugging
-                        console.log('Raw QR data:', code.data);
+                        console.log('Raw QR data:', code.data.substring(0, 100));
+                        // Add a brief cooldown to prevent spam warnings
+                        this.scanCooldown = true;
+                        setTimeout(() => { this.scanCooldown = false; }, 2000);
                     }
                 }
             } else {
@@ -219,12 +222,14 @@ class AttendanceApp {
             extractedData
         });
         
-        // For now, let's be more lenient - allow any QR with some content
-        // Server will do the final validation
-        return qrData.length > 10; // Just check it has some content
+        // Strict validation - only valid attendance QRs should trigger GitHub actions
+        const isValid = hasService && hasName && hasMobile && hasValidData;
         
-        // TODO: Re-enable strict validation later:
-        // return hasService && hasName && hasMobile && hasValidData;
+        if (!isValid) {
+            console.log('❌ Invalid attendance QR - missing required fields');
+        }
+        
+        return isValid;
     }
     
     async processQRCode(qrData) {

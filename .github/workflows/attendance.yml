@@ -109,27 +109,61 @@ jobs:
             // Check for duplicate attendance on the same day
             if (content && mobileNumber) {
               const lines = content.split('\n').filter(line => line.trim());
-              const duplicateFound = lines.some(line => {
+              console.log(`🔍 Checking for duplicates of mobile: "${mobileNumber}"`);
+              console.log(`📋 CSV has ${lines.length} lines to check`);
+              
+              const duplicateFound = lines.some((line, index) => {
                 // Skip header line
-                if (line.includes('Timestamp') && line.includes('Mobile Number')) return false;
+                if (line.includes('Timestamp') || line.includes('Mobile Number')) {
+                  console.log(`⏭️ Skipping header line ${index}: ${line.substring(0, 50)}`);
+                  return false;
+                }
                 
-                // Check if mobile number exists in this line
-                if (!line.includes(`"${mobileNumber}"`)) return false;
+                // Parse CSV line properly - split by comma but respect quotes
+                const fields = [];
+                let current = '';
+                let inQuotes = false;
                 
-                // Extract date from the line (first field)
-                const match = line.match(/^"([^"]+)"/);
-                if (match) {
-                  const entryDate = match[1];
-                  const entryDateObj = new Date(entryDate);
+                for (let i = 0; i < line.length; i++) {
+                  const char = line[i];
+                  if (char === '"') {
+                    inQuotes = !inQuotes;
+                  } else if (char === ',' && !inQuotes) {
+                    fields.push(current);
+                    current = '';
+                  } else {
+                    current += char;
+                  }
+                }
+                fields.push(current); // Add last field
+                
+                if (fields.length < 4) {
+                  console.log(`⏭️ Skipping malformed line ${index}: ${line}`);
+                  return false;
+                }
+                
+                // Fields: [timestamp, mobile, name, service]
+                const [timestamp, mobile, name, service] = fields;
+                const cleanMobile = mobile.replace(/"/g, '').trim();
+                const cleanTimestamp = timestamp.replace(/"/g, '').trim();
+                
+                console.log(`🔍 Line ${index}: Mobile="${cleanMobile}" vs "${mobileNumber}"`);
+                
+                if (cleanMobile === mobileNumber) {
+                  // Check if it's the same day
+                  const entryDateObj = new Date(cleanTimestamp);
                   const todayObj = new Date();
-                  
-                  // Check if it's the same day (compare date strings for accuracy)
                   const entryDay = entryDateObj.toDateString();
                   const todayDay = todayObj.toDateString();
                   
-                  console.log(`Comparing dates: Entry="${entryDay}" vs Today="${todayDay}"`);
-                  return entryDay === todayDay;
+                  console.log(`📅 Date check: Entry="${entryDay}" vs Today="${todayDay}"`);
+                  
+                  if (entryDay === todayDay) {
+                    console.log(`⚠️ DUPLICATE FOUND! ${cleanMobile} already recorded today at ${cleanTimestamp}`);
+                    return true;
+                  }
                 }
+                
                 return false;
               });
               
