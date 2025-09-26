@@ -1,16 +1,17 @@
 class AttendanceApp {
     constructor() {
+        this.startButton = document.getElementById('startCamera');
+        this.stopButton = document.getElementById('stopCamera');
+        this.settingsBtn = document.getElementById('settingsBtn');
+        this.downloadCsvBtn = document.getElementById('downloadCsvBtn');
+        this.modal = document.getElementById('configModal');
+        this.configForm = document.getElementById('configForm');
+        this.closeBtn = document.querySelector('.close');
         this.video = document.getElementById('video');
         this.canvas = document.getElementById('canvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.startButton = document.getElementById('startButton');
-        this.stopButton = document.getElementById('stopButton');
         this.status = document.getElementById('status');
         this.lastScan = document.getElementById('lastScan');
         this.recentList = document.getElementById('recentList');
-        this.settingsBtn = document.getElementById('settingsBtn');
-        this.modal = document.getElementById('configModal');
-        this.configForm = document.getElementById('configForm');
         
         this.isScanning = false;
         this.stream = null;
@@ -37,6 +38,7 @@ class AttendanceApp {
         this.startButton.addEventListener('click', () => this.startCamera());
         this.stopButton.addEventListener('click', () => this.stopCamera());
         this.settingsBtn.addEventListener('click', () => this.showModal());
+        this.downloadCsvBtn.addEventListener('click', () => this.downloadCsv());
         
         // Modal controls
         document.querySelector('.close').addEventListener('click', () => this.hideModal());
@@ -356,6 +358,73 @@ class AttendanceApp {
         if (this.stream && this.video.srcObject) {
             this.isScanning = true;
             this.scan();
+        }
+    }
+    
+    async downloadCsv() {
+        const { githubToken, repoOwner, repoName } = this.config;
+        
+        // Check if configuration is available
+        if (!githubToken || !repoOwner || !repoName) {
+            this.updateStatus('❌ GitHub configuration required to download CSV', 'error');
+            this.showModal();
+            return;
+        }
+        
+        try {
+            // Disable button and show loading
+            this.downloadCsvBtn.disabled = true;
+            this.downloadCsvBtn.textContent = '⏳ Downloading...';
+            
+            // Fetch CSV file from GitHub repository
+            const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/attendance.csv`, {
+                headers: {
+                    'Authorization': `Bearer ${githubToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('No attendance data found. Scan some QR codes first!');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(`GitHub API Error: ${errorData.message || response.statusText}`);
+                }
+            }
+            
+            const data = await response.json();
+            const csvContent = atob(data.content); // Decode base64 content
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+            const filename = `attendance-${dateStr}.csv`;
+            
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            this.updateStatus(`✅ CSV downloaded successfully: ${filename}`, 'success');
+            
+        } catch (error) {
+            console.error('Error downloading CSV:', error);
+            this.updateStatus(`❌ Download failed: ${error.message}`, 'error');
+        } finally {
+            // Re-enable button
+            this.downloadCsvBtn.disabled = false;
+            this.downloadCsvBtn.textContent = '📊 Download CSV';
         }
     }
 }

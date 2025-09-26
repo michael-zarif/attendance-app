@@ -13,6 +13,7 @@ A simple, mobile-friendly web application for tracking attendance using QR code 
 - 📋 **Recent Scans**: View recent attendance records
 - ⚙️ **Easy Configuration**: Simple three-field setup
 - 📊 **Dual Storage**: Data stored as GitHub Issues + CSV file
+- 📥 **CSV Download**: Download attendance data directly from the app
 - 🔒 **Secure**: No external servers, uses GitHub's infrastructure
 
 ## Quick Start
@@ -77,9 +78,10 @@ All records are also stored in `attendance.csv` with parsed data:
 ```
 
 ### Data Export
-- **Download CSV**: Go to repository → `attendance.csv` → Download
-- **Browse Records**: Repository → Issues tab → Filter by `attendance` label
-- **Audit Trail**: Actions tab shows all processing history
+- **📥 In-App Download**: Click "Download CSV" button in the app
+- **📂 GitHub Download**: Go to repository → `attendance.csv` → Download
+- **📋 Browse Records**: Repository → Issues tab → Filter by `attendance` label
+- **🔍 Audit Trail**: Actions tab shows all processing history
 
 ## Mobile Installation
 
