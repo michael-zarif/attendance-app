@@ -1,7 +1,9 @@
 class AttendanceApp {
     constructor() {
-        this.startButton = document.getElementById('startCamera');
-        this.stopButton = document.getElementById('stopCamera');
+        console.log('🏗️ AttendanceApp constructor started');
+        
+        this.startButton = document.getElementById('startButton');
+        this.stopButton = document.getElementById('stopButton');
         this.settingsBtn = document.getElementById('settingsBtn');
         this.downloadCsvBtn = document.getElementById('downloadCsvBtn');
         this.modal = document.getElementById('configModal');
@@ -12,6 +14,16 @@ class AttendanceApp {
         this.status = document.getElementById('status');
         this.lastScan = document.getElementById('lastScan');
         this.recentList = document.getElementById('recentList');
+        
+        // Debug: Check if elements exist
+        console.log('🔍 Element check:', {
+            startButton: !!this.startButton,
+            stopButton: !!this.stopButton,
+            settingsBtn: !!this.settingsBtn,
+            downloadCsvBtn: !!this.downloadCsvBtn,
+            modal: !!this.modal,
+            status: !!this.status
+        });
         
         this.isScanning = false;
         this.stream = null;
@@ -431,7 +443,13 @@ class AttendanceApp {
 
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.attendanceApp = new AttendanceApp();
+    console.log('🚀 Initializing Attendance App...');
+    try {
+        window.attendanceApp = new AttendanceApp();
+        console.log('✅ Attendance App initialized successfully');
+    } catch (error) {
+        console.error('❌ Error initializing Attendance App:', error);
+    }
 });
 
 // Service Worker Registration for PWA capabilities

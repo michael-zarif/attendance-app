@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug QR Attendance App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Debug Mode</h1>
+            <p>Testing button functionality</p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <button id="startButton" class="btn btn-primary">Start Camera</button>
+                <button id="stopButton" class="btn btn-secondary">Stop Camera</button>
+                <button id="settingsBtn" class="btn btn-primary">Settings</button>
+                <button id="downloadCsvBtn" class="btn btn-secondary">Download CSV</button>
+            </div>
+            
+            <div id="status" class="status">Debug mode - Check console</div>
+            <div id="lastScan" class="last-scan" style="display: none;"></div>
+            <ul id="recentList" class="recent-list"></ul>
+            
+            <div id="configModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h3>Configuration</h3>
+                    <form id="configForm">
+                        <input type="text" id="githubToken" placeholder="Token">
+                        <input type="text" id="repoOwner" placeholder="Owner">
+                        <input type="text" id="repoName" placeholder="Repo">
+                        <button type="submit">Save</button>
+                    </form>
+                </div>
+            </div>
+            
+            <video id="video" style="display: none;"></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </main>
+    </div>
+
+    <script>
+        // Debug version with console logging
+        console.log('🔧 Debug script starting...');
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ DOM loaded');
+            
+            // Check if all elements exist
+            const elements = {
+                startButton: document.getElementById('startButton'),
+                stopButton: document.getElementById('stopButton'),
+                settingsBtn: document.getElementById('settingsBtn'),
+                downloadCsvBtn: document.getElementById('downloadCsvBtn'),
+                status: document.getElementById('status'),
+                configModal: document.getElementById('configModal')
+            };
+            
+            console.log('🔍 Elements found:', elements);
+            
+            // Add simple click handlers
+            if (elements.startButton) {
+                elements.startButton.addEventListener('click', () => {
+                    console.log('🎬 Start button clicked!');
+                    elements.status.textContent = 'Start button works!';
+                });
+            }
+            
+            if (elements.stopButton) {
+                elements.stopButton.addEventListener('click', () => {
+                    console.log('⏹️ Stop button clicked!');
+                    elements.status.textContent = 'Stop button works!';
+                });
+            }
+            
+            if (elements.settingsBtn) {
+                elements.settingsBtn.addEventListener('click', () => {
+                    console.log('⚙️ Settings button clicked!');
+                    elements.status.textContent = 'Settings button works!';
+                    elements.configModal.style.display = 'block';
+                });
+            }
+            
+            if (elements.downloadCsvBtn) {
+                elements.downloadCsvBtn.addEventListener('click', () => {
+                    console.log('📊 Download CSV button clicked!');
+                    elements.status.textContent = 'Download CSV button works!';
+                });
+            }
+            
+            console.log('✅ Debug handlers attached');
+        });
+    </script>
+</body>
+</html>
