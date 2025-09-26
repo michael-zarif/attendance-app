@@ -427,10 +427,18 @@ class AttendanceApp {
             }
             
             const data = await response.json();
-            const csvContent = atob(data.content); // Decode base64 content
             
-            // Create download link
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+            // Properly decode base64 content and handle UTF-8 encoding
+            const binaryString = atob(data.content);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const csvContent = new TextDecoder('utf-8').decode(bytes);
+            
+            // Create download link with proper UTF-8 BOM for Excel compatibility
+            const bom = '\uFEFF'; // UTF-8 BOM
+            const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             

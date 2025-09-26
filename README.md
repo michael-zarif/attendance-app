@@ -56,18 +56,11 @@ A simple, mobile-friendly web application for tracking attendance using QR code 
 2. **Point camera at QR code**
 3. **Automatic process**:
    - Detects QR code
-   - Records timestamp
-   - Creates GitHub Issue
-   - Updates CSV file
+   - Records timestamp  
+   - Updates CSV file directly
    - Shows confirmation
 
 ## Data Storage
-
-### GitHub Issues
-Each scan creates a GitHub Issue with:
-- **Title**: `حضور: [Full Name] - [Timestamp]` (Arabic & English)
-- **Labels**: `attendance`, `automated`, `[service-name]`
-- **Body**: Bilingual detailed attendance information with parsed data
 
 ### CSV File
 All records are also stored in `attendance.csv` with parsed data:
@@ -78,9 +71,8 @@ All records are also stored in `attendance.csv` with parsed data:
 ```
 
 ### Data Export
-- **📥 In-App Download**: Click "Download CSV" button in the app
-- **📂 GitHub Download**: Go to repository → `attendance.csv` → Download
-- **📋 Browse Records**: Repository → Issues tab → Filter by `attendance` label
+- **📥 In-App Download**: Click "Download CSV" button in the app (supports Arabic text)
+- **📂 GitHub Download**: Go to repository → `attendance.csv` → Download  
 - **🔍 Audit Trail**: Actions tab shows all processing history
 
 ## Mobile Installation

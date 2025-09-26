@@ -24,7 +24,9 @@ jobs:
         script: |
           const { qrData, timestamp, displayTime, source } = context.payload.client_payload;
           
-          // Parse QR data first (before creating issue)
+          console.log('Processing attendance record:', { qrData, displayTime, source });
+          
+          // Parse QR data to extract mobile, name, and service
           let mobileNumber = '';
           let fullName = '';
           let service = '';
@@ -56,31 +58,9 @@ jobs:
             mobileNumber = qrData;
           }
 
-          // Create an issue for each attendance record
-          const issue = await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: `حضور: ${fullName || 'Unknown'} - ${displayTime}`,
-            body: `
-            ## 📋 سجل الحضور / Attendance Record
-            
-            - **👤 الاسم الكامل / Full Name**: ${fullName}
-            - **📱 رقم الموبايل / Mobile**: ${mobileNumber}
-            - **⛪ الخدمة / Service**: ${service}
-            - **🕒 وقت الحضور / Time**: ${displayTime}
-            - **📅 ISO Timestamp**: ${timestamp}
-            - **🌐 Source**: ${source}
-            - **✅ Recorded**: ${new Date().toISOString()}
-            
-            ---
-            **Raw QR Data**: \`${qrData}\`
-            `,
-            labels: ['attendance', 'automated', service || 'unknown-service']
-          });
+          console.log('Parsed data:', { fullName, mobileNumber, service });
           
-          console.log('Attendance recorded:', issue.data.html_url);
-          
-          // Also append to a CSV file  
+          // Create CSV line with proper UTF-8 encoding
           const csvLine = `"${displayTime}","${mobileNumber}","${fullName}","${service}"\n`;
           
           try {
@@ -95,27 +75,25 @@ jobs:
               content = Buffer.from(file.data.content, 'base64').toString();
             } catch (e) {
               // File doesn't exist, create header
-              content = '"Timestamp","Mobile Number","Full Name","Service"\n';
             }
             
             // Append new record
             const newContent = content + csvLine;
             
-            // Update or create file
-            await github.rest.repos.createOrUpdateFileContents({
+            // Update or create file with proper UTF-8 encoding
+            const updateResult = await github.rest.repos.createOrUpdateFileContents({
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: 'attendance.csv',
-              message: `Add attendance record: ${qrData}`,
-              content: Buffer.from(newContent).toString('base64'),
-              sha: content !== '"Timestamp","QR Code Data","ISO Timestamp","Source"\n' ? 
-                   (await github.rest.repos.getContent({
-                     owner: context.repo.owner,
-                     repo: context.repo.repo,
-                     path: 'attendance.csv'
-                   })).data.sha : undefined
+              message: `Attendance: ${fullName || mobileNumber || 'Unknown'} - ${displayTime}`,
+              content: Buffer.from(newContent, 'utf8').toString('base64'),
+              sha: file ? file.data.sha : undefined
             });
             
-          } catch (error) {
-            console.log('CSV update failed:', error.message);
+            console.log(`Attendance recorded successfully for ${fullName}`);
+            console.log(`CSV updated: ${updateResult.data.content.html_url}`);
+            
+          } catch (csvError) {
+            console.error('Error updating CSV:', csvError);
+            throw csvError;
           }
