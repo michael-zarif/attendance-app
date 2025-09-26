@@ -42,8 +42,8 @@ class AttendanceApp {
         if (this.config.githubToken && this.config.repoOwner && this.config.repoName) {
             this.updateStatus('✅ Ready to scan QR codes!', 'success');
         } else {
-            this.updateStatus('🔑 Please configure GitHub token first', 'warning');
-            this.showModal();
+            this.updateStatus('🔑 Configure GitHub token to save attendance data', 'warning');
+            // Don't auto-show modal, let user start camera first if they want
         }
     }
     
@@ -188,6 +188,15 @@ class AttendanceApp {
             timestamp: timestamp.toISOString(),
             displayTime: timestamp.toLocaleString()
         };
+        
+        const { githubToken, repoOwner, repoName } = this.config;
+        
+        if (!githubToken || !repoOwner || !repoName) {
+            this.updateStatus('⚠️ QR detected but GitHub not configured - data not saved', 'warning');
+            this.showLastScan(scanRecord);
+            this.addToRecentScans(scanRecord);
+            return;
+        }
         
         this.updateStatus('QR Code detected! Sending to GitHub...', 'scanning');
         
@@ -360,6 +369,11 @@ class AttendanceApp {
             `;
             this.recentList.appendChild(li);
         });
+    }
+    
+    updateStatus(message, type = 'info') {
+        this.status.textContent = message;
+        this.status.className = `status ${type}`;
     }
     
     saveForRetry(scanRecord) {
