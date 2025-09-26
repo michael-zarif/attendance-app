@@ -60,12 +60,11 @@ jobs:
 
           console.log('Parsed data:', { fullName, mobileNumber, service });
           
-          // Create CSV line with proper UTF-8 encoding
-          const csvLine = `"${displayTime}","${mobileNumber}","${fullName}","${service}"\n`;
-          
           try {
             // Try to get existing attendance.csv
             let content = '';
+            let fileSha = undefined;
+            
             try {
               const file = await github.rest.repos.getContent({
                 owner: context.repo.owner,
@@ -73,9 +72,65 @@ jobs:
                 path: 'attendance.csv'
               });
               content = Buffer.from(file.data.content, 'base64').toString();
+              fileSha = file.data.sha;
             } catch (e) {
               // File doesn't exist, create header
+              console.log('attendance.csv not found, creating new file');
             }
+            
+            // Check for duplicate attendance on the same day
+            const today = new Date().toLocaleDateString('en-US'); // Get today's date
+            const todayArabic = new Date().toLocaleDateString('ar-EG'); // Arabic date format
+            
+            if (content && mobileNumber) {
+              const lines = content.split('\n').filter(line => line.trim());
+              const duplicateFound = lines.some(line => {
+                if (!line.includes(mobileNumber)) return false;
+                
+                // Extract date from the line (first field)
+                const match = line.match(/^"([^"]+)"/);
+                if (match) {
+                  const entryDate = match[1];
+                  const entryDateObj = new Date(entryDate);
+                  const todayObj = new Date();
+                  
+                  // Check if it's the same day
+                  return entryDateObj.toDateString() === todayObj.toDateString();
+                }
+                return false;
+              });
+              
+              if (duplicateFound) {
+                console.log(`⚠️ Duplicate attendance detected for ${fullName} (${mobileNumber}) today`);
+                console.log(`❌ Attendance not recorded - already present for today`);
+                
+                // Create a GitHub issue to log the duplicate attempt
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `⚠️ Duplicate Attendance Attempt: ${fullName} - ${displayTime}`,
+                  body: `
+                  ## ⚠️ Duplicate Attendance Detected
+                  
+                  - **👤 Name**: ${fullName}
+                  - **📱 Mobile**: ${mobileNumber}
+                  - **⛪ Service**: ${service}
+                  - **🕒 Attempt Time**: ${displayTime}
+                  - **❌ Status**: **REJECTED - Already recorded today**
+                  
+                  This person has already been recorded for attendance today.
+                  `,
+                  labels: ['attendance', 'duplicate', 'rejected']
+                });
+                
+                return; // Exit without updating CSV
+              }
+            }
+            
+            console.log('✅ No duplicate found, proceeding with attendance recording');
+            
+            // Create CSV line with proper UTF-8 encoding
+            const csvLine = `"${displayTime}","${mobileNumber}","${fullName}","${service}"\n`;
             
             // Append new record
             const newContent = content + csvLine;
@@ -85,13 +140,13 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: 'attendance.csv',
-              message: `Attendance: ${fullName || mobileNumber || 'Unknown'} - ${displayTime}`,
+              message: `📋 Attendance: ${fullName || mobileNumber || 'Unknown'} - ${displayTime}`,
               content: Buffer.from(newContent, 'utf8').toString('base64'),
-              sha: file ? file.data.sha : undefined
+              sha: fileSha
             });
             
-            console.log(`Attendance recorded successfully for ${fullName}`);
-            console.log(`CSV updated: ${updateResult.data.content.html_url}`);
+            console.log(`✅ Attendance recorded successfully for ${fullName}`);
+            console.log(`📄 CSV file updated successfully`);
             
           } catch (csvError) {
             console.error('Error updating CSV:', csvError);

@@ -118,6 +118,11 @@ header p {
     color: #721c24;
 }
 
+.status.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
 .status.scanning {
     background: #fff3cd;
     color: #856404;
@@ -170,9 +175,8 @@ header p {
     border-top: 1px solid #e0e0e0;
 }
 
+
 .btn-secondary {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
     border: none;
     padding: 12px 24px;
     border-radius: 25px;

@@ -210,37 +210,58 @@ class AttendanceApp {
             throw new Error('GitHub configuration missing. Please configure in settings.');
         }
         
-        // Trigger GitHub Actions workflow via repository dispatch
-        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/dispatches`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${githubToken}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                event_type: 'attendance-scan',
-                client_payload: {
-                    qrData: scanRecord.qrData,
-                    displayTime: scanRecord.displayTime,
-                    timestamp: scanRecord.timestamp,
-                    source: window.location.hostname || 'mobile-app'
+        try {
+            this.updateStatus('Submitting attendance...', 'scanning');
+            
+            const response = await fetch(`https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.config.githubToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    event_type: 'attendance-scan',
+                    client_payload: {
+                        qrData: scanRecord.qrData,
+                        timestamp: scanRecord.timestamp,
+                        displayTime: scanRecord.displayTime,
+                        source: 'web-app'
+                    }
+                })
+            });
+            
+            if (response.ok) {
+                // Check for duplicates by looking at recent scans
+                const { extractedData } = this.parseQRData(scanRecord.qrData);
+                const isDuplicate = this.checkForDuplicateToday(extractedData.mobileNumber);
+                
+                if (isDuplicate) {
+                    this.updateStatus(`Already recorded today: ${extractedData.fullName}`, 'warning');
+                    scanRecord.status = 'duplicate';
+                    scanRecord.isDuplicate = true;
+                } else {
+                    this.updateStatus(`Attendance recorded successfully!`, 'success');
+                    scanRecord.status = 'submitted';
+                    scanRecord.submitted = true;
                 }
-            })
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`GitHub API Error: ${response.status} ${response.statusText} - ${errorText}`);
+                
+                this.showLastScan(scanRecord);
+                this.addToRecentScans(scanRecord);
+                
+                // Store scan (even duplicates for reference)
+                let recentScans = JSON.parse(localStorage.getItem('recentScans') || '[]');
+                recentScans.unshift(scanRecord);
+                recentScans = recentScans.slice(0, 10); // Keep only last 10
+                localStorage.setItem('recentScans', JSON.stringify(recentScans));
+                
+            } else {
+                throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error sending to GitHub:', error);
+            this.updateStatus(`Error: ${error.message}`, 'error');
         }
-        
-        // Repository dispatch returns 204 No Content on success
-        return { success: true, message: 'Attendance recorded successfully' };
-    }
-    
-    updateStatus(message, type = '') {
-        this.status.textContent = message;
-        this.status.className = `status ${type}`;
     }
     
     showLastScan(scanRecord) {
@@ -258,6 +279,57 @@ class AttendanceApp {
         recentScans = recentScans.slice(0, 10); // Keep only last 10 scans
         localStorage.setItem('recentScans', JSON.stringify(recentScans));
         this.displayRecentScans(recentScans);
+    }
+    
+    parseQRData(qrData) {
+        let mobileNumber = '';
+        let fullName = '';
+        let service = '';
+        
+        try {
+            const qrText = qrData || '';
+            
+            // Extract mobile number
+            const mobileMatch = qrText.match(/رقم الموبايل["":]+"?([^"""}]+)/);
+            if (mobileMatch) {
+                mobileNumber = mobileMatch[1].replace(/[""]/g, '').trim();
+            }
+            
+            // Extract full name
+            const nameMatch = qrText.match(/الاسم رباعي["":]+"?([^"""}]+)/);
+            if (nameMatch) {
+                fullName = nameMatch[1].replace(/[""]/g, '').trim();
+            }
+            
+            // Extract service
+            const serviceMatch = qrText.match(/الخدمة["":]+"?([^"""}]+)/);
+            if (serviceMatch) {
+                service = serviceMatch[1].replace(/[""]/g, '').trim();
+            }
+        } catch (parseError) {
+            console.log('Error parsing QR data:', parseError);
+        }
+        
+        return {
+            extractedData: { mobileNumber, fullName, service },
+            displayText: `${fullName} (${mobileNumber}) - ${service}`
+        };
+    }
+    
+    checkForDuplicateToday(mobileNumber) {
+        if (!mobileNumber) return false;
+        
+        const recentScans = JSON.parse(localStorage.getItem('recentScans') || '[]');
+        const today = new Date().toDateString();
+        
+        return recentScans.some(scan => {
+            if (scan.isDuplicate) return false; // Don't count previous duplicates
+            
+            const scanDate = new Date(scan.timestamp).toDateString();
+            const { extractedData } = this.parseQRData(scan.qrData);
+            
+            return scanDate === today && extractedData.mobileNumber === mobileNumber;
+        });
     }
     
     loadRecentScans() {
