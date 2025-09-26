@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Attendance">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Attendance Scanner</h1>
+            <p>Scan QR code to record attendance</p>
+        </header>
+
+        <main>
+            <!-- Camera Section -->
+            <div class="camera-section">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button id="startButton" class="btn btn-primary">Start Camera</button>
+                <button id="stopButton" class="btn btn-secondary" style="display: none;">Stop Camera</button>
+            </div>
+
+            <!-- Status Display -->
+            <div class="status-section">
+                <div id="status" class="status">Ready to scan</div>
+                <div id="lastScan" class="last-scan" style="display: none;"></div>
+            </div>
+
+            <!-- Recent Scans -->
+            <div class="recent-section">
+                <h3>Recent Scans</h3>
+                <ul id="recentList" class="recent-list"></ul>
+            </div>
+        </main>
+
+        <!-- Configuration Modal -->
+        <div id="configModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Google Sheets Configuration</h3>
+                <form id="configForm">
+                    <div class="form-group">
+                        <label for="spreadsheetId">Spreadsheet ID:</label>
+                        <input type="text" id="spreadsheetId" placeholder="Enter Google Sheet ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sheetName">Sheet Name:</label>
+                        <input type="text" id="sheetName" placeholder="Sheet1" value="Sheet1">
+                    </div>
+                    <div class="form-group">
+                        <label for="apiKey">Google Sheets API Key:</label>
+                        <input type="password" id="apiKey" placeholder="Enter API Key" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Settings Button -->
+        <button id="settingsBtn" class="settings-btn">⚙️</button>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

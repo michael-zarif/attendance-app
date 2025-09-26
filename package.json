@@ -1,0 +1,25 @@
+{
+  "name": "qr-attendance-app",
+  "version": "1.0.0",
+  "description": "Simple QR code attendance tracking web app",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "serve": "python3 -m http.server 8080",
+    "dev": "python -m http.server 8080"
+  },
+  "keywords": [
+    "attendance",
+    "qr-code",
+    "mobile",
+    "pwa",
+    "google-sheets"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": ".",
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}
