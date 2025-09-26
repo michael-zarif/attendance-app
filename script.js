@@ -140,10 +140,10 @@ class AttendanceApp {
             displayTime: timestamp.toLocaleString()
         };
         
-        this.updateStatus('QR Code detected! Sending to Google Sheets...', 'scanning');
+        this.updateStatus('QR Code detected! Sending to GitHub...', 'scanning');
         
         try {
-            await this.sendToGoogleSheets(scanRecord);
+            await this.sendToGitHub(scanRecord);
             this.updateStatus('✅ Attendance recorded successfully!', 'success');
             this.showLastScan(scanRecord);
             this.addToRecentScans(scanRecord);
@@ -154,46 +154,52 @@ class AttendanceApp {
             }
             
         } catch (error) {
-            console.error('Error sending to Google Sheets:', error);
-            this.updateStatus('❌ Failed to record attendance. Please check your settings.', 'error');
+            console.error('Error sending to GitHub:', {
+                message: error.message,
+                status: error.status,
+                statusText: error.statusText,
+                error: error
+            });
+            this.updateStatus(`❌ Failed: ${error.message || 'Unknown error'}`, 'error');
             
             // Save for later retry
             this.saveForRetry(scanRecord);
         }
     }
     
-    async sendToGoogleSheets(scanRecord) {
-        const { apiKey, spreadsheetId, sheetName } = this.config;
+    async sendToGitHub(scanRecord) {
+        const { githubToken, repoOwner, repoName } = this.config;
         
-        if (!apiKey || !spreadsheetId) {
-            throw new Error('Google Sheets configuration missing');
+        if (!githubToken || !repoOwner || !repoName) {
+            throw new Error('GitHub configuration missing. Please configure in settings.');
         }
         
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}:append?valueInputOption=RAW&key=${apiKey}`;
-        
-        const body = {
-            values: [[
-                scanRecord.displayTime,
-                scanRecord.qrData,
-                scanRecord.timestamp,
-                window.location.hostname || 'mobile-app'
-            ]]
-        };
-        
-        const response = await fetch(url, {
+        // Trigger GitHub Actions workflow via repository dispatch
+        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/dispatches`, {
             method: 'POST',
             headers: {
+                'Authorization': `Bearer ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json',
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify({
+                event_type: 'attendance-scan',
+                client_payload: {
+                    qrData: scanRecord.qrData,
+                    displayTime: scanRecord.displayTime,
+                    timestamp: scanRecord.timestamp,
+                    source: window.location.hostname || 'mobile-app'
+                }
+            })
         });
         
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Failed to write to Google Sheets');
+            const errorText = await response.text();
+            throw new Error(`GitHub API Error: ${response.status} ${response.statusText} - ${errorText}`);
         }
         
-        return response.json();
+        // Repository dispatch returns 204 No Content on success
+        return { success: true, message: 'Attendance recorded successfully' };
     }
     
     updateStatus(message, type = '') {
@@ -247,10 +253,14 @@ class AttendanceApp {
         
         for (let scan of failedScans) {
             try {
-                await this.sendToGoogleSheets(scan);
+                await this.sendToGitHub(scan);
                 successful.push(scan);
             } catch (error) {
-                console.error('Retry failed:', error);
+                console.error('Retry failed:', {
+                    message: error.message,
+                    scan: scan,
+                    error: error
+                });
             }
         }
         
@@ -271,20 +281,54 @@ class AttendanceApp {
         this.modal.style.display = 'none';
     }
     
-    saveConfig() {
+    async saveConfig() {
         const formData = new FormData(this.configForm);
         this.config = {
-            spreadsheetId: formData.get('spreadsheetId') || document.getElementById('spreadsheetId').value,
-            sheetName: formData.get('sheetName') || document.getElementById('sheetName').value || 'Sheet1',
-            apiKey: formData.get('apiKey') || document.getElementById('apiKey').value
+            githubToken: formData.get('githubToken') || document.getElementById('githubToken').value,
+            repoOwner: formData.get('repoOwner') || document.getElementById('repoOwner').value,
+            repoName: formData.get('repoName') || document.getElementById('repoName').value
         };
         
-        localStorage.setItem('attendanceConfig', JSON.stringify(this.config));
-        this.hideModal();
-        this.updateStatus('Configuration saved successfully!', 'success');
+        // Test configuration before saving
+        this.updateStatus('Testing configuration...', 'scanning');
+        try {
+            await this.testConfiguration();
+            localStorage.setItem('attendanceConfig', JSON.stringify(this.config));
+            this.hideModal();
+            this.updateStatus('Configuration saved and tested successfully!', 'success');
+            // Retry any failed scans
+            this.retryFailedScans();
+        } catch (error) {
+            this.updateStatus(`Configuration test failed: ${error.message}`, 'error');
+            console.error('Configuration test failed:', error);
+        }
+    }
+    
+    async testConfiguration() {
+        const { githubToken, repoOwner, repoName } = this.config;
         
-        // Retry any failed scans
-        this.retryFailedScans();
+        if (!githubToken || !repoOwner || !repoName) {
+            throw new Error('All GitHub configuration fields are required');
+        }
+        
+        console.log('Testing GitHub configuration:', { repoOwner, repoName });
+        
+        // Test by checking repository access
+        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`, {
+            headers: {
+                'Authorization': `Bearer ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API Error: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+        
+        const repoData = await response.json();
+        console.log('GitHub configuration test successful:', repoData.full_name);
+        return repoData;
     }
     
     loadConfig() {
@@ -293,14 +337,14 @@ class AttendanceApp {
     }
     
     loadConfigIntoForm() {
-        if (this.config.spreadsheetId) {
-            document.getElementById('spreadsheetId').value = this.config.spreadsheetId;
+        if (this.config.githubToken) {
+            document.getElementById('githubToken').value = this.config.githubToken;
         }
-        if (this.config.sheetName) {
-            document.getElementById('sheetName').value = this.config.sheetName;
+        if (this.config.repoOwner) {
+            document.getElementById('repoOwner').value = this.config.repoOwner;
         }
-        if (this.config.apiKey) {
-            document.getElementById('apiKey').value = this.config.apiKey;
+        if (this.config.repoName) {
+            document.getElementById('repoName').value = this.config.repoName;
         }
     }
     

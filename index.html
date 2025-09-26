@@ -49,22 +49,35 @@
         <div id="configModal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
-                <h3>Google Sheets Configuration</h3>
+                <h3>GitHub Configuration</h3>
+                <p class="config-info">Using GitHub Actions as backend for attendance tracking. Data will be stored as Issues and CSV file.</p>
                 <form id="configForm">
                     <div class="form-group">
-                        <label for="spreadsheetId">Spreadsheet ID:</label>
-                        <input type="text" id="spreadsheetId" placeholder="Enter Google Sheet ID" required>
+                        <label for="githubToken">GitHub Personal Access Token:</label>
+                        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" required>
+                        <small>Create at: Settings → Developer settings → Personal access tokens → Fine-grained tokens</small>
                     </div>
                     <div class="form-group">
-                        <label for="sheetName">Sheet Name:</label>
-                        <input type="text" id="sheetName" placeholder="Sheet1" value="Sheet1">
+                        <label for="repoOwner">Repository Owner:</label>
+                        <input type="text" id="repoOwner" placeholder="your-username" required>
+                        <small>Your GitHub username or organization name</small>
                     </div>
                     <div class="form-group">
-                        <label for="apiKey">Google Sheets API Key:</label>
-                        <input type="password" id="apiKey" placeholder="Enter API Key" required>
+                        <label for="repoName">Repository Name:</label>
+                        <input type="text" id="repoName" placeholder="qr-attendance-app" required>
+                        <small>The name of your repository</small>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Configuration</button>
                 </form>
+                <div class="setup-instructions">
+                    <h4>Setup Guide:</h4>
+                    <ol>
+                        <li>Push this code to your GitHub repository</li>
+                        <li>Create a Personal Access Token with 'repo' permissions</li>
+                        <li>Enter your GitHub details above</li>
+                        <li>Attendance will be recorded as Issues + CSV file</li>
+                    </ol>
+                </div>
             </div>
         </div>
 
