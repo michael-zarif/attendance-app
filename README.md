@@ -64,15 +64,16 @@ A simple, mobile-friendly web application for tracking attendance using QR code 
 
 ### GitHub Issues
 Each scan creates a GitHub Issue with:
-- **Title**: `Attendance: [QR-Data] - [Timestamp]`
-- **Labels**: `attendance`, `automated`
-- **Body**: Detailed scan information
+- **Title**: `حضور: [Full Name] - [Timestamp]` (Arabic & English)
+- **Labels**: `attendance`, `automated`, `[service-name]`
+- **Body**: Bilingual detailed attendance information with parsed data
 
 ### CSV File
-All records are also stored in `attendance.csv`:
+All records are also stored in `attendance.csv` with parsed data:
 ```csv
-"Timestamp","QR Code Data","ISO Timestamp","Source"
-"1/1/2024, 10:30:00 AM","student-123","2024-01-01T10:30:00.000Z","mobile-app"
+"Timestamp","Mobile Number","Full Name","Service"
+"9/26/2025, 10:19:18 PM","1227039327","ابانوب رأفت وهيب هرمينا","تلمذة شباب"
+"9/26/2025, 10:22:23 PM","01274539819","امير أشرف لطيف تادرس","تلمذة شباب"
 ```
 
 ### Data Export

@@ -24,28 +24,64 @@ jobs:
         script: |
           const { qrData, timestamp, displayTime, source } = context.payload.client_payload;
           
+          // Parse QR data first (before creating issue)
+          let mobileNumber = '';
+          let fullName = '';
+          let service = '';
+          
+          try {
+            // The QR data appears to be in Arabic JSON-like format
+            const qrText = qrData || '';
+            
+            // Extract mobile number
+            const mobileMatch = qrText.match(/رقم الموبايل["":]+"?([^"""}]+)/);
+            if (mobileMatch) {
+              mobileNumber = mobileMatch[1].replace(/[""]/g, '').trim();
+            }
+            
+            // Extract full name
+            const nameMatch = qrText.match(/الاسم رباعي["":]+"?([^"""}]+)/);
+            if (nameMatch) {
+              fullName = nameMatch[1].replace(/[""]/g, '').trim();
+            }
+            
+            // Extract service
+            const serviceMatch = qrText.match(/الخدمة["":]+"?([^"""}]+)/);
+            if (serviceMatch) {
+              service = serviceMatch[1].replace(/[""]/g, '').trim();
+            }
+          } catch (parseError) {
+            console.log('Error parsing QR data:', parseError);
+            // Fallback to original data
+            mobileNumber = qrData;
+          }
+
           // Create an issue for each attendance record
           const issue = await github.rest.issues.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            title: `Attendance: ${qrData} - ${displayTime}`,
+            title: `حضور: ${fullName || 'Unknown'} - ${displayTime}`,
             body: `
-            ## Attendance Record
+            ## 📋 سجل الحضور / Attendance Record
             
-            - **QR Code Data**: ${qrData}
-            - **Timestamp**: ${displayTime}
-            - **ISO Timestamp**: ${timestamp}
-            - **Source**: ${source}
-            - **Recorded**: ${new Date().toISOString()}
+            - **👤 الاسم الكامل / Full Name**: ${fullName}
+            - **📱 رقم الموبايل / Mobile**: ${mobileNumber}
+            - **⛪ الخدمة / Service**: ${service}
+            - **🕒 وقت الحضور / Time**: ${displayTime}
+            - **📅 ISO Timestamp**: ${timestamp}
+            - **🌐 Source**: ${source}
+            - **✅ Recorded**: ${new Date().toISOString()}
+            
+            ---
+            **Raw QR Data**: \`${qrData}\`
             `,
-            labels: ['attendance', 'automated']
+            labels: ['attendance', 'automated', service || 'unknown-service']
           });
           
           console.log('Attendance recorded:', issue.data.html_url);
           
-          // Also append to a CSV file
-          const fs = require('fs');
-          const csvLine = `"${displayTime}","${qrData}","${timestamp}","${source}"\n`;
+          // Also append to a CSV file  
+          const csvLine = `"${displayTime}","${mobileNumber}","${fullName}","${service}"\n`;
           
           try {
             // Try to get existing attendance.csv
@@ -59,7 +95,7 @@ jobs:
               content = Buffer.from(file.data.content, 'base64').toString();
             } catch (e) {
               // File doesn't exist, create header
-              content = '"Timestamp","QR Code Data","ISO Timestamp","Source"\n';
+              content = '"Timestamp","Mobile Number","Full Name","Service"\n';
             }
             
             // Append new record
