@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Test</title>
+</head>
+<body style="padding: 20px; font-family: Arial, sans-serif;">
+    <h2>🧪 QR Code Detection Test</h2>
+    <p>Use this to test if QR scanning is working properly.</p>
+    
+    <div style="border: 2px solid #333; padding: 20px; margin: 20px 0; display: inline-block;">
+        <div style="background: white; padding: 20px; font-size: 12px; font-family: monospace;">
+            {"الخدمة":"تلمذة شباب","الاسم رباعي":"Test User Name","رقم الموبايل":"01234567890"}
+        </div>
+        <p style="text-align: center; margin: 10px 0 0 0; font-size: 14px;">
+            📱 Point your camera at this text box
+        </p>
+    </div>
+    
+    <h3>🔍 Testing Steps:</h3>
+    <ol>
+        <li>Open the main attendance app</li>
+        <li>Click "📷 Start Camera"</li>
+        <li>Point camera at the box above</li>
+        <li>Check browser console (F12) for debug messages</li>
+        <li>Should detect: <code>🎯 QR Code detected:</code></li>
+    </ol>
+    
+    <h3>📊 Expected Debug Messages:</h3>
+    <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px;">
+🏗️ AttendanceApp constructor started
+🔍 Element check: {startButton: true, stopButton: true, ...}
+✅ Attendance App initialized successfully
+📹 Video loaded: 1280 x 720
+✅ Camera started successfully
+🎯 QR Code detected: {"الخدمة":"تلمذة شباب"...}
+    </pre>
+    
+    <p><strong>Alternative:</strong> Use any QR code generator to create a test code with Arabic text.</p>
+    
+    <a href="index.html" style="display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+        🔙 Back to Attendance App
+    </a>
+</body>
+</html>

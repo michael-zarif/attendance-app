@@ -11,6 +11,7 @@ class AttendanceApp {
         this.closeBtn = document.querySelector('.close');
         this.video = document.getElementById('video');
         this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d');
         this.status = document.getElementById('status');
         this.lastScan = document.getElementById('lastScan');
         this.recentList = document.getElementById('recentList');
@@ -91,18 +92,24 @@ class AttendanceApp {
             
             this.video.srcObject = this.stream;
             this.video.setAttribute('playsinline', true);
-            this.video.play();
+            
+            // Wait for video to be ready
+            await new Promise((resolve) => {
+                this.video.addEventListener('loadedmetadata', () => {
+                    console.log('📹 Video loaded:', this.video.videoWidth, 'x', this.video.videoHeight);
+                    this.canvas.width = this.video.videoWidth;
+                    this.canvas.height = this.video.videoHeight;
+                    resolve();
+                }, { once: true });
+                this.video.play();
+            });
             
             this.startButton.style.display = 'none';
             this.stopButton.style.display = 'block';
-            
-            this.video.addEventListener('loadedmetadata', () => {
-                this.canvas.width = this.video.videoWidth;
-                this.canvas.height = this.video.videoHeight;
-                this.isScanning = true;
-                this.scan();
-                this.updateStatus('Camera active. Point at QR code to scan', 'scanning');
-            });
+            this.isScanning = true;
+            this.scan();
+            this.updateStatus('📷 Camera active. Point at QR code to scan', 'scanning');
+            console.log('✅ Camera started successfully');
             
         } catch (error) {
             console.error('Error accessing camera:', error);
@@ -125,12 +132,27 @@ class AttendanceApp {
         if (!this.isScanning) return;
         
         if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
+            // Ensure canvas dimensions match video
+            if (this.canvas.width !== this.video.videoWidth || this.canvas.height !== this.video.videoHeight) {
+                this.canvas.width = this.video.videoWidth;
+                this.canvas.height = this.video.videoHeight;
+            }
+            
             this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
             
-            if (code && !this.scanCooldown) {
-                this.processQRCode(code.data);
+            // Check if jsQR is available
+            if (typeof jsQR !== 'undefined') {
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (code && !this.scanCooldown) {
+                    console.log('🎯 QR Code detected:', code.data);
+                    this.processQRCode(code.data);
+                }
+            } else {
+                console.error('❌ jsQR library not loaded');
+                this.updateStatus('❌ QR scanner library not loaded', 'error');
+                return;
             }
         }
         
@@ -296,11 +318,11 @@ class AttendanceApp {
     }
     
     async saveConfig() {
-        const formData = new FormData(this.configForm);
+        const githubToken = document.getElementById('githubToken').value;
         this.config = {
-            githubToken: formData.get('githubToken') || document.getElementById('githubToken').value,
-            repoOwner: formData.get('repoOwner') || document.getElementById('repoOwner').value,
-            repoName: formData.get('repoName') || document.getElementById('repoName').value
+            githubToken: githubToken,
+            repoOwner: 'michael-zarif',
+            repoName: 'attendance-app'
         };
         
         // Test configuration before saving
@@ -358,12 +380,6 @@ class AttendanceApp {
     loadConfigIntoForm() {
         if (this.config.githubToken) {
             document.getElementById('githubToken').value = this.config.githubToken;
-        }
-        if (this.config.repoOwner) {
-            document.getElementById('repoOwner').value = this.config.repoOwner;
-        }
-        if (this.config.repoName) {
-            document.getElementById('repoName').value = this.config.repoName;
         }
     }
     

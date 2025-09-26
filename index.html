@@ -55,35 +55,16 @@
         <div id="configModal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
-                <h3>⚙️ GitHub Token Configuration</h3>
-                <p class="config-info">Enter your GitHub Personal Access Token. Repository settings are fixed for security.</p>
+                <h3>🔑 GitHub Token Required</h3>
+                <p class="config-info">Enter your GitHub Personal Access Token to enable attendance tracking.</p>
                 <form id="configForm">
                     <div class="form-group">
                         <label for="githubToken">GitHub Personal Access Token:</label>
                         <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" required>
-                        <small>Create at: Settings → Developer settings → Personal access tokens → Fine-grained tokens</small>
+                        <small>Create at: Settings → Developer settings → Personal access tokens</small>
                     </div>
-                    <div class="form-group">
-                        <label for="repoOwner">Repository Owner:</label>
-                        <input type="text" id="repoOwner" value="michael-zarif" readonly>
-                        <small>Fixed repository owner</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="repoName">Repository Name:</label>
-                        <input type="text" id="repoName" value="attendance-app" readonly>
-                        <small>Fixed repository name</small>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    <button type="submit" class="btn btn-primary">💾 Save Token</button>
                 </form>
-                <div class="setup-instructions">
-                    <h4>Setup Guide:</h4>
-                    <ol>
-                        <li>Push this code to your GitHub repository</li>
-                        <li>Create a Personal Access Token with 'repo' permissions</li>
-                        <li>Enter your GitHub details above</li>
-                        <li>Attendance will be recorded as Issues + CSV file</li>
-                    </ol>
-                </div>
             </div>
         </div>
 
