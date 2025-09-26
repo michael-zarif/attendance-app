@@ -170,6 +170,7 @@ To modify or extend the app:
 - ✅ **Reliable infrastructure** (99.9% uptime)
 - ✅ **Full audit trail** in Actions tab
 - ✅ **Version controlled data** (CSV file in git history)
+- ✅ **Optimized Pages builds** (CSV updates don't trigger rebuilds)
 
 ## License
 

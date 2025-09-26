@@ -88,7 +88,7 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: `❌ Invalid QR Data Attempt - ${displayTime}`,
+                title: `❌ Invalid QR Data Attempt - ${displayTime} [skip ci]`,
                 body: `
                 ## ❌ Invalid QR Data Detected
                 
@@ -175,7 +175,7 @@ jobs:
                 await github.rest.issues.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  title: `⚠️ Duplicate Attendance Attempt: ${fullName} - ${displayTime}`,
+                  title: `⚠️ Duplicate Attendance Attempt: ${fullName} - ${displayTime} [skip ci]`,
                   body: `
                   ## ⚠️ Duplicate Attendance Detected
                   
@@ -207,7 +207,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: 'attendance.csv',
-              message: `📋 Attendance: ${fullName || mobileNumber || 'Unknown'} - ${displayTime}`,
+              message: `📋 Attendance: ${fullName || mobileNumber || 'Unknown'} - ${displayTime} [skip ci]`,
               content: Buffer.from(newContent, 'utf8').toString('base64'),
               sha: fileSha
             });
