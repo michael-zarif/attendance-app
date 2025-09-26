@@ -76,6 +76,7 @@ jobs:
             } catch (e) {
               // File doesn't exist, create header
               console.log('attendance.csv not found, creating new file');
+              content = '"Timestamp","Mobile Number","Full Name","Service"\n';
             }
             
             // Check for duplicate attendance on the same day

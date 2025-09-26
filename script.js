@@ -40,18 +40,30 @@ class AttendanceApp {
         
         // Auto-start if config is available
         if (this.config.githubToken && this.config.repoOwner && this.config.repoName) {
-            this.updateStatus('Configuration loaded. Ready to scan!', 'success');
+            this.updateStatus('✅ Ready to scan QR codes!', 'success');
         } else {
-            this.updateStatus('Please configure GitHub settings', 'error');
+            this.updateStatus('🔑 Please configure GitHub token first', 'warning');
             this.showModal();
         }
     }
     
     setupEventListeners() {
-        this.startButton.addEventListener('click', () => this.startCamera());
-        this.stopButton.addEventListener('click', () => this.stopCamera());
-        this.settingsBtn.addEventListener('click', () => this.showModal());
-        this.downloadCsvBtn.addEventListener('click', () => this.downloadCsv());
+        this.startButton.addEventListener('click', () => {
+            console.log('🎬 Start Camera button clicked');
+            this.startCamera();
+        });
+        this.stopButton.addEventListener('click', () => {
+            console.log('⏹️ Stop Camera button clicked');
+            this.stopCamera();
+        });
+        this.settingsBtn.addEventListener('click', () => {
+            console.log('⚙️ Settings button clicked');
+            this.showModal();
+        });
+        this.downloadCsvBtn.addEventListener('click', () => {
+            console.log('📊 Download button clicked');
+            this.downloadCsv();
+        });
         
         // Modal controls
         document.querySelector('.close').addEventListener('click', () => this.hideModal());
@@ -79,6 +91,7 @@ class AttendanceApp {
     
     async startCamera() {
         try {
+            console.log('📷 startCamera method called');
             this.updateStatus('Starting camera...', 'scanning');
             
             // Request camera permission

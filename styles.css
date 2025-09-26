@@ -177,6 +177,8 @@ header p {
 
 
 .btn-secondary {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
     border: none;
     padding: 12px 24px;
     border-radius: 25px;
