@@ -347,7 +347,12 @@ class AttendanceApp {
     
     loadConfig() {
         const saved = localStorage.getItem('attendanceConfig');
-        return saved ? JSON.parse(saved) : {};
+        const defaults = {
+            repoOwner: 'michael-zarif',
+            repoName: 'attendance-app',
+            githubToken: ''
+        };
+        return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
     }
     
     loadConfigIntoForm() {
